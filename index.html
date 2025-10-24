@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شخبطة</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎨 شخبطة 🎨</h1>
+            <p>لعبة الرسم والتخمين</p>
+        </header>
+
+        <!-- Game Area -->
+        <div class="game-container">
+            <!-- Left Panel - Players and Chat -->
+            <div class="left-panel">
+                <div class="players-section">
+                    <h3>اللاعبون</h3>
+                    <div class="players-list" id="playersList">
+                        <!-- Players will be added here -->
+                    </div>
+                </div>
+                
+                <div class="chat-section">
+                    <h3>المحادثة</h3>
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." maxlength="100">
+                        <button id="sendMessage">إرسال</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Game Area -->
+            <div class="center-panel">
+                <div class="game-info">
+                    <div class="current-player" id="currentPlayer">انتظار اللاعبين...</div>
+                    <div class="word-display" id="wordDisplay">كلمة السر</div>
+                    <div class="timer" id="timer">60</div>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="drawingCanvas" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="guess-section">
+                    <input type="text" id="guessInput" placeholder="اكتب تخمينك هنا..." maxlength="50">
+                    <button id="submitGuess">تخمين</button>
+                </div>
+            </div>
+
+            <!-- Right Panel - Drawing Tools -->
+            <div class="right-panel">
+                <div class="tools-section">
+                    <h3>أدوات الرسم</h3>
+                    
+                    <div class="tool-buttons">
+                        <button class="tool-btn active" id="brushTool" data-tool="brush">🖌️ فرشاة</button>
+                        <button class="tool-btn" id="eraserTool" data-tool="eraser">🧽 ممحاة</button>
+                        <button class="tool-btn" id="clearTool" data-tool="clear">🗑️ مسح الكل</button>
+                    </div>
+                    
+                    <div class="brush-size">
+                        <label>حجم الفرشاة:</label>
+                        <input type="range" id="brushSize" min="1" max="20" value="5">
+                        <span id="brushSizeValue">5</span>
+                    </div>
+                    
+                    <div class="color-palette">
+                        <label>الألوان:</label>
+                        <div class="colors">
+                            <button class="color-btn active" data-color="#000000" style="background-color: #000000;"></button>
+                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;"></button>
+                            <button class="color-btn" data-color="#00FF00" style="background-color: #00FF00;"></button>
+                            <button class="color-btn" data-color="#0000FF" style="background-color: #0000FF;"></button>
+                            <button class="color-btn" data-color="#FFFF00" style="background-color: #FFFF00;"></button>
+                            <button class="color-btn" data-color="#FF00FF" style="background-color: #FF00FF;"></button>
+                            <button class="color-btn" data-color="#00FFFF" style="background-color: #00FFFF;"></button>
+                            <button class="color-btn" data-color="#FFA500" style="background-color: #FFA500;"></button>
+                            <button class="color-btn" data-color="#800080" style="background-color: #800080;"></button>
+                            <button class="color-btn" data-color="#FFC0CB" style="background-color: #FFC0CB;"></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-controls">
+                    <button id="createRoom" class="control-btn">إنشاء غرفة</button>
+                    <button id="joinRoom" class="control-btn">انضمام لغرفة</button>
+                    <button id="startGame" class="control-btn" disabled>بدء اللعبة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Modal -->
+    <div id="roomModal" class="modal">
+        <div class="modal-content">
+            <h3>انضمام للغرفة</h3>
+            <input type="text" id="roomCode" placeholder="كود الغرفة" maxlength="6">
+            <input type="text" id="playerName" placeholder="اسمك" maxlength="20">
+            <div class="modal-buttons">
+                <button id="joinRoomBtn">انضمام</button>
+                <button id="createRoomBtn">إنشاء غرفة جديدة</button>
+                <button id="closeModal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
