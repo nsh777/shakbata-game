@@ -15,6 +15,9 @@ class ShakbataGame {
         this.timer = 60;
         this.timerInterval = null;
         this.sounds = {};
+        this.avatar = {
+            expression: '😊'
+        };
         this.initializeSounds();
         
         // Arabic words database
@@ -231,6 +234,9 @@ class ShakbataGame {
                 this.submitGuess();
             }
         });
+        
+        // Avatar customization
+        this.setupAvatarCustomization();
     }
     
     setupDrawing() {
@@ -443,6 +449,10 @@ class ShakbataGame {
         this.socket.on('error', (data) => {
             alert(data.message);
         });
+        
+        this.socket.on('playerAvatarUpdated', (data) => {
+            this.handlePlayerAvatarUpdated(data);
+        });
     }
     
     // Socket event handlers
@@ -532,6 +542,14 @@ class ShakbataGame {
         }
     }
     
+    handlePlayerAvatarUpdated(data) {
+        // Update player in the list
+        this.players = this.players.map(p => 
+            p.id === data.player.id ? data.player : p
+        );
+        this.updatePlayersList();
+    }
+    
     drawFromData(data) {
         // Draw on canvas from other players' drawing data
         this.ctx.strokeStyle = data.color;
@@ -559,8 +577,17 @@ class ShakbataGame {
         this.players.forEach(player => {
             const playerDiv = document.createElement('div');
             playerDiv.className = 'player-item';
+            
+            // Create avatar for player
+            const avatar = this.createPlayerAvatar(player.avatar || {
+                expression: '😊'
+            });
+            
             playerDiv.innerHTML = `
-                <span>${player.name}</span>
+                <div style="display: flex; align-items: center;">
+                    ${avatar.outerHTML}
+                    <span style="margin-right: 8px;">${player.name}</span>
+                </div>
                 <span class="player-score">${player.score}</span>
             `;
             playersList.appendChild(playerDiv);
@@ -651,6 +678,53 @@ class ShakbataGame {
         guessInput.value = '';
     }
     
+    setupAvatarCustomization() {
+        // Avatar option buttons
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                const value = e.target.dataset.value;
+                
+                // Update active button
+                document.querySelectorAll(`[data-type="${type}"]`).forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Update avatar
+                this.updateAvatar(type, value);
+            });
+        });
+        
+        // Initialize avatar display
+        this.updateAvatarDisplay();
+    }
+    
+    updateAvatar(type, value) {
+        this.avatar[type] = value;
+        this.updateAvatarDisplay();
+        
+        // Send avatar update to server
+        if (this.socket) {
+            this.socket.emit('avatarUpdate', { avatar: this.avatar });
+        }
+    }
+    
+    updateAvatarDisplay() {
+        const emojiElement = document.getElementById('avatarEmoji');
+        if (!emojiElement) return;
+        
+        // Simply display the selected emoji
+        emojiElement.textContent = this.avatar.expression;
+    }
+    
+    createPlayerAvatar(avatar) {
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'player-avatar';
+        
+        // Simply display the emoji
+        avatarDiv.textContent = avatar.expression || '😊';
+        return avatarDiv;
+    }
+
     updateUI() {
         // Update current player display
         const currentPlayerDiv = document.getElementById('currentPlayer');

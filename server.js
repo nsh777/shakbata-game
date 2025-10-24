@@ -86,7 +86,10 @@ io.on('connection', (socket) => {
             id: socket.id,
             name: playerName,
             score: 0,
-            isDrawing: false
+            isDrawing: false,
+            avatar: {
+                expression: '😊'
+            }
         };
         
         room.players.push(player);
@@ -122,7 +125,10 @@ io.on('connection', (socket) => {
             id: socket.id,
             name: playerName,
             score: 0,
-            isDrawing: false
+            isDrawing: false,
+            avatar: {
+                expression: '😊'
+            }
         };
         
         room.players.push(player);
@@ -221,6 +227,24 @@ io.on('connection', (socket) => {
         io.to(room.id).emit('chatMessage', {
             player: playerData.player,
             message: data.message
+        });
+    });
+    
+    // Handle avatar updates
+    socket.on('avatarUpdate', (data) => {
+        const playerData = players.get(socket.id);
+        if (!playerData) return;
+        
+        const room = rooms.get(playerData.roomId);
+        if (!room) return;
+        
+        // Update player avatar
+        playerData.player.avatar = data.avatar;
+        
+        // Notify all players in room
+        io.to(room.id).emit('playerAvatarUpdated', {
+            player: playerData.player,
+            room: room
         });
     });
     
