@@ -271,7 +271,11 @@ io.on('connection', (socket) => {
         if (!playerData) return;
         
         const room = rooms.get(playerData.roomId);
-        if (!room || playerData.player.isDrawing) return;
+        if (!room) return;
+        
+        // In testing mode with 1 player, allow the drawer to guess
+        const isTestingMode = room.players.length === 1;
+        if (!isTestingMode && playerData.player.isDrawing) return;
         
         const { guess } = data;
         
@@ -380,7 +384,7 @@ function endTurn(room) {
     room.currentPlayer.isDrawing = true;
     
     room.currentWord = getRandomWord();
-    room.timer = 60;
+    room.timer = room.gameTime || 60;
     
     // Start new timer
     room.timerInterval = setInterval(() => {
