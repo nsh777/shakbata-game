@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
         origin: process.env.NODE_ENV === 'production' 
-            ? [process.env.FRONTEND_URL || "https://your-app.railway.app"] 
+            ? [process.env.FRONTEND_URL || "https://your-app.herokuapp.com"] 
             : "*",
         methods: ["GET", "POST"]
     }
@@ -58,28 +58,6 @@ const arabicWords = [
     'رمادي', 'ذهبي', 'فضي', 'أزرق فاتح', 'أخضر فاتح', 'أحمر فاتح', 'أصفر فاتح', 'برتقالي فاتح', 'بنفسجي فاتح', 'وردي فاتح'
 ];
 
-// Helper function to create safe player object
-function createSafePlayer(player) {
-    return {
-        id: player.id,
-        name: player.name,
-        score: player.score,
-        isDrawing: player.isDrawing,
-        avatar: player.avatar || { expression: '😊' }
-    };
-}
-
-// Helper function to create safe room object
-function createSafeRoom(room) {
-    return {
-        id: room.id,
-        players: room.players.map(createSafePlayer),
-        gameState: room.gameState,
-        currentWord: room.currentWord,
-        timer: room.timer
-    };
-}
-
 // Socket.io connection handling
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -98,8 +76,7 @@ io.on('connection', (socket) => {
             currentWord: '',
             timer: 60,
             round: 0,
-            maxRounds: 3,
-            timerInterval: null
+            maxRounds: 3
         };
         
         rooms.set(roomId, room);
@@ -122,10 +99,42 @@ io.on('connection', (socket) => {
         players.set(socket.id, { roomId, player });
         
         socket.join(roomId);
-        socket.emit('roomCreated', { roomId, player: createSafePlayer(player) });
+        socket.emit('roomCreated', { 
+            roomId, 
+            player: {
+                id: player.id,
+                name: player.name,
+                score: player.score,
+                isDrawing: player.isDrawing,
+                avatar: player.avatar
+            }
+        });
         socket.emit('roomJoined', { 
-            room: createSafeRoom(room), 
-            player: createSafePlayer(player) 
+            room: {
+                id: room.id,
+                players: room.players.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    score: p.score,
+                    isDrawing: p.isDrawing,
+                    avatar: p.avatar
+                })),
+                gameState: room.gameState,
+                currentPlayer: room.currentPlayer ? {
+                    id: room.currentPlayer.id,
+                    name: room.currentPlayer.name,
+                    score: room.currentPlayer.score,
+                    isDrawing: room.currentPlayer.isDrawing,
+                    avatar: room.currentPlayer.avatar
+                } : null
+            }, 
+            player: {
+                id: player.id,
+                name: player.name,
+                score: player.score,
+                isDrawing: player.isDrawing,
+                avatar: player.avatar
+            }
         });
         
         console.log(`Room created: ${roomId} by ${playerName}`);
@@ -162,14 +171,53 @@ io.on('connection', (socket) => {
         
         socket.join(roomCode);
         socket.emit('roomJoined', { 
-            room: createSafeRoom(room), 
-            player: createSafePlayer(player) 
+            room: {
+                id: room.id,
+                players: room.players.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    score: p.score,
+                    isDrawing: p.isDrawing,
+                    avatar: p.avatar
+                })),
+                gameState: room.gameState,
+                currentPlayer: room.currentPlayer ? {
+                    id: room.currentPlayer.id,
+                    name: room.currentPlayer.name,
+                    score: room.currentPlayer.score,
+                    isDrawing: room.currentPlayer.isDrawing,
+                    avatar: room.currentPlayer.avatar
+                } : null
+            }, 
+            player: {
+                id: player.id,
+                name: player.name,
+                score: player.score,
+                isDrawing: player.isDrawing,
+                avatar: player.avatar
+            }
         });
         
         // Notify all players in room
         io.to(roomCode).emit('playerJoined', { 
-            player: createSafePlayer(player), 
-            room: createSafeRoom(room) 
+            player: {
+                id: player.id,
+                name: player.name,
+                score: player.score,
+                isDrawing: player.isDrawing,
+                avatar: player.avatar
+            }, 
+            room: {
+                id: room.id,
+                players: room.players.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    score: p.score,
+                    isDrawing: p.isDrawing,
+                    avatar: p.avatar
+                })),
+                gameState: room.gameState
+            }
         });
         
         console.log(`${playerName} joined room ${roomCode}`);
@@ -205,7 +253,12 @@ io.on('connection', (socket) => {
         
         io.to(room.id).emit('gameStarted', { 
             currentWord: room.currentWord,
-            currentPlayer: createSafePlayer(room.currentPlayer),
+            currentPlayer: {
+                id: room.currentPlayer.id,
+                name: room.currentPlayer.name,
+                score: room.currentPlayer.score,
+                isDrawing: room.currentPlayer.isDrawing
+            },
             timer: room.timer
         });
         
@@ -241,7 +294,7 @@ io.on('connection', (socket) => {
             room.currentPlayer.score += 5; // Bonus for the drawer
             
             io.to(room.id).emit('correctGuess', {
-                player: createSafePlayer(playerData.player),
+                player: playerData.player,
                 word: room.currentWord
             });
             
@@ -249,7 +302,7 @@ io.on('connection', (socket) => {
         } else {
             // Wrong guess
             io.to(room.id).emit('wrongGuess', {
-                player: createSafePlayer(playerData.player),
+                player: playerData.player,
                 guess: guess
             });
         }
@@ -264,7 +317,7 @@ io.on('connection', (socket) => {
         if (!room) return;
         
         io.to(room.id).emit('chatMessage', {
-            player: createSafePlayer(playerData.player),
+            player: playerData.player,
             message: data.message
         });
     });
@@ -282,8 +335,8 @@ io.on('connection', (socket) => {
         
         // Notify all players in room
         io.to(room.id).emit('playerAvatarUpdated', {
-            player: createSafePlayer(playerData.player),
-            room: createSafeRoom(room)
+            player: playerData.player,
+            room: room
         });
     });
     
@@ -308,8 +361,8 @@ io.on('connection', (socket) => {
         } else {
             // Notify remaining players
             io.to(playerData.roomId).emit('playerLeft', {
-                player: createSafePlayer(playerData.player),
-                room: createSafeRoom(room)
+                player: playerData.player,
+                room: room
             });
         }
         
@@ -353,7 +406,12 @@ function endTurn(room) {
     }, 1000);
     
     io.to(room.id).emit('turnChanged', {
-        currentPlayer: createSafePlayer(room.currentPlayer),
+        currentPlayer: {
+            id: room.currentPlayer.id,
+            name: room.currentPlayer.name,
+            score: room.currentPlayer.score,
+            isDrawing: room.currentPlayer.isDrawing
+        },
         currentWord: room.currentWord,
         timer: room.timer
     });

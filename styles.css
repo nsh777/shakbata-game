@@ -12,6 +12,109 @@ body {
     direction: rtl;
 }
 
+/* Landing Page Styles */
+.landing-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 40px 20px;
+}
+
+.landing-content {
+    text-align: center;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 40px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.landing-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.landing-content p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    opacity: 0.9;
+}
+
+.landing-options {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.landing-btn {
+    background: linear-gradient(135deg, #2E7D32, #1B5E20);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 30px 40px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.landing-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #388E3C, #2E7D32);
+}
+
+.landing-btn small {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+.host-btn {
+    background: linear-gradient(135deg, #FF6B6B, #E53E3E);
+}
+
+.host-btn:hover {
+    background: linear-gradient(135deg, #FF8A8A, #FF6B6B);
+}
+
+.join-btn {
+    background: linear-gradient(135deg, #4ECDC4, #38B2AC);
+}
+
+.join-btn:hover {
+    background: linear-gradient(135deg, #6ED5CD, #4ECDC4);
+}
+
+/* Responsive Landing Page */
+@media (max-width: 768px) {
+    .landing-options {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .landing-btn {
+        min-width: 250px;
+        padding: 25px 30px;
+    }
+    
+    .landing-content h2 {
+        font-size: 2rem;
+    }
+}
+
 .container {
     max-width: 1400px;
     margin: 0 auto;

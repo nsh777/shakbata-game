@@ -187,6 +187,15 @@ class ShakbataGame {
             this.ctx.lineWidth = this.brushSize;
         });
         
+        // Landing page controls
+        document.getElementById('hostGameBtn').addEventListener('click', () => {
+            this.showHostModal();
+        });
+        
+        document.getElementById('joinGameBtn').addEventListener('click', () => {
+            this.showJoinModal();
+        });
+        
         // Game controls
         document.getElementById('createRoom').addEventListener('click', () => {
             this.showRoomModal();
@@ -351,12 +360,49 @@ class ShakbataGame {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
+    showHostModal() {
+        // Initialize socket connection first
+        this.initSocket();
+        
+        // Show modal for host
+        document.getElementById('roomModal').style.display = 'block';
+        document.getElementById('createRoomBtn').style.display = 'block';
+        document.getElementById('joinRoomBtn').style.display = 'none';
+        
+        // Hide room code input for hosting
+        document.getElementById('roomCodeInput').style.display = 'none';
+        
+        // Change modal title
+        document.getElementById('modalTitle').textContent = 'إنشاء غرفة جديدة';
+    }
+    
+    showJoinModal() {
+        // Initialize socket connection first
+        this.initSocket();
+        
+        // Show modal for join
+        document.getElementById('roomModal').style.display = 'block';
+        document.getElementById('createRoomBtn').style.display = 'none';
+        document.getElementById('joinRoomBtn').style.display = 'block';
+        
+        // Show room code input for joining
+        document.getElementById('roomCodeInput').style.display = 'block';
+        
+        // Change modal title
+        document.getElementById('modalTitle').textContent = 'انضمام للغرفة';
+    }
+    
     showRoomModal() {
         document.getElementById('roomModal').style.display = 'block';
     }
     
     hideRoomModal() {
         document.getElementById('roomModal').style.display = 'none';
+    }
+    
+    showGameArea() {
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('gameArea').style.display = 'grid';
     }
     
     createRoom() {
@@ -366,17 +412,13 @@ class ShakbataGame {
             return;
         }
         
-        // Generate room code
-        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        
         // Initialize socket connection
         this.initSocket();
         
-        // Create room
-        this.socket.emit('createRoom', { playerName, roomCode });
+        // Create room without room code
+        this.socket.emit('createRoom', { playerName });
         
         this.hideRoomModal();
-        this.addChatMessage('system', `تم إنشاء الغرفة: ${roomCode}`);
     }
     
     joinRoom() {
@@ -461,6 +503,8 @@ class ShakbataGame {
         this.currentPlayer = data.player;
         this.addPlayer(data.player.name, 0, true);
         this.addChatMessage('system', `تم إنشاء الغرفة: ${data.roomId}`);
+        this.addChatMessage('system', `شارك هذا الكود مع أصدقائك: ${data.roomId}`);
+        this.showGameArea();
     }
     
     handleRoomJoined(data) {
@@ -469,6 +513,7 @@ class ShakbataGame {
         this.players = data.room.players;
         this.updatePlayersList();
         this.addChatMessage('system', `انضممت للغرفة: ${data.roomId}`);
+        this.showGameArea();
     }
     
     handlePlayerJoined(data) {
@@ -754,7 +799,11 @@ class ShakbataGame {
         
         // Update start game button
         const startGameBtn = document.getElementById('startGame');
-        startGameBtn.disabled = this.players.length < 2 || this.gameState === 'playing';
+        const shouldDisable = this.players.length < 2 || this.gameState === 'playing';
+        startGameBtn.disabled = shouldDisable;
+        
+        // Debug logging
+        console.log('UpdateUI - Players:', this.players.length, 'GameState:', this.gameState, 'Button disabled:', shouldDisable);
         
         // Update word display
         this.updateWordDisplay();

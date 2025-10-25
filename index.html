@@ -15,8 +15,28 @@
             <p>لعبة الرسم والتخمين</p>
         </header>
 
+        <!-- Landing Page -->
+        <div id="landingPage" class="landing-page">
+            <div class="landing-content">
+                <h2>مرحباً بك في شخبطة!</h2>
+                <p>لعبة الرسم والتخمين مع الأصدقاء</p>
+                
+                <div class="landing-options">
+                    <button id="hostGameBtn" class="landing-btn host-btn">
+                        🎮 استضافة لعبة
+                        <small>إنشاء غرفة جديدة</small>
+                    </button>
+                    
+                    <button id="joinGameBtn" class="landing-btn join-btn">
+                        🚪 انضمام للعبة
+                        <small>الانضمام لغرفة موجودة</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Game Area -->
-        <div class="game-container">
+        <div id="gameArea" class="game-container" style="display: none;">
             <!-- Left Panel - Players and Chat -->
             <div class="left-panel">
                 <div class="players-section">
@@ -132,8 +152,10 @@
     <!-- Room Modal -->
     <div id="roomModal" class="modal">
         <div class="modal-content">
-            <h3>انضمام للغرفة</h3>
-            <input type="text" id="roomCode" placeholder="كود الغرفة" maxlength="6">
+            <h3 id="modalTitle">انضمام للغرفة</h3>
+            <div id="roomCodeInput">
+                <input type="text" id="roomCode" placeholder="كود الغرفة" maxlength="6">
+            </div>
             <input type="text" id="playerName" placeholder="اسمك" maxlength="20">
             <div class="modal-buttons">
                 <button id="joinRoomBtn">انضمام</button>
