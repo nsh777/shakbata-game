@@ -835,8 +835,14 @@ class ShakbataGame {
         // Update start game button
         const startGameBtn = document.getElementById('startGame');
         const isHost = this.currentPlayer?.isHost || false;
-        const testingMode = document.getElementById('testingMode').checked;
-        const shouldDisable = (!testingMode && this.players.length < 2) || this.gameState === 'playing' || !isHost;
+        const testingModeCheckbox = document.getElementById('testingMode');
+        const testingMode = testingModeCheckbox ? testingModeCheckbox.checked : false;
+        // Button should be disabled if:
+        // 1. Game is already playing
+        // 2. User is not the host
+        // 3. Not enough players (unless testing mode is enabled)
+        const hasEnoughPlayers = this.players.length >= 2 || testingMode;
+        const shouldDisable = this.gameState === 'playing' || !isHost || !hasEnoughPlayers;
         
         startGameBtn.disabled = shouldDisable;
         
@@ -845,6 +851,8 @@ class ShakbataGame {
             startGameBtn.textContent = 'اللعبة جارية...';
         } else if (!isHost) {
             startGameBtn.textContent = 'فقط المضيف يمكنه البدء';
+        } else if (!hasEnoughPlayers) {
+            startGameBtn.textContent = 'انتظار المزيد من اللاعبين...';
         } else if (testingMode) {
             startGameBtn.textContent = 'بدء اللعبة (وضع الاختبار)';
         } else {
@@ -852,7 +860,7 @@ class ShakbataGame {
         }
         
         // Debug logging
-        console.log('UpdateUI - Players:', this.players.length, 'GameState:', this.gameState, 'CurrentPlayer:', this.currentPlayer?.name, 'IsHost:', isHost, 'Button disabled:', shouldDisable);
+        console.log('UpdateUI - Players:', this.players.length, 'GameState:', this.gameState, 'CurrentPlayer:', this.currentPlayer?.name, 'IsHost:', isHost, 'TestingMode:', testingMode, 'Button disabled:', shouldDisable);
         
         // Update word display
         this.updateWordDisplay();
