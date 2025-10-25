@@ -201,12 +201,16 @@ class ShakbataGame {
     showHostModal() {
         document.getElementById('modalTitle').textContent = 'استضافة لعبة';
         document.getElementById('roomCodeInput').style.display = 'none';
+        document.getElementById('createRoom').style.display = 'block';
+        document.getElementById('joinRoom').style.display = 'none';
         document.getElementById('roomModal').style.display = 'block';
     }
     
     showJoinModal() {
         document.getElementById('modalTitle').textContent = 'انضمام للعبة';
         document.getElementById('roomCodeInput').style.display = 'block';
+        document.getElementById('createRoom').style.display = 'none';
+        document.getElementById('joinRoom').style.display = 'block';
         document.getElementById('roomModal').style.display = 'block';
     }
     
@@ -260,6 +264,7 @@ class ShakbataGame {
     }
     
     toggleReady() {
+        console.log('Toggle ready clicked');
         this.socket.emit('playerReady');
     }
     
@@ -439,7 +444,15 @@ class ShakbataGame {
         const startBtn = document.getElementById('startGame');
         const isHost = this.currentPlayer?.isHost || false;
         const hasEnoughPlayers = this.players.length >= 2;
-        const allReady = this.players.every(p => p.isReady);
+        const readyCount = this.players.filter(p => p.isReady).length;
+        
+        console.log('Start button check:', {
+            isHost,
+            hasEnoughPlayers,
+            playersCount: this.players.length,
+            readyCount,
+            gameState: this.gameState
+        });
         
         if (this.gameState === 'playing') {
             startBtn.textContent = 'اللعبة جارية...';
@@ -450,8 +463,7 @@ class ShakbataGame {
         } else if (!hasEnoughPlayers) {
             startBtn.textContent = 'انتظار المزيد من اللاعبين...';
             startBtn.disabled = true;
-        } else if (!allReady) {
-            const readyCount = this.players.filter(p => p.isReady).length;
+        } else if (readyCount < this.players.length) {
             startBtn.textContent = `انتظار ${this.players.length - readyCount} لاعبين...`;
             startBtn.disabled = true;
         } else {
