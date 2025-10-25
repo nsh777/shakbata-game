@@ -47,12 +47,11 @@ class ShakbataGame {
             this.showJoinModal();
         });
         
-        // Room creation
+        // Modal controls
         document.getElementById('createRoom').addEventListener('click', () => {
             this.createRoom();
         });
         
-        // Room joining
         document.getElementById('joinRoom').addEventListener('click', () => {
             this.joinRoom();
         });
@@ -224,12 +223,21 @@ class ShakbataGame {
     
     // Game Methods
     createRoom() {
+        console.log('Create room button clicked');
         const playerName = document.getElementById('playerName').value.trim();
+        console.log('Player name:', playerName);
+        
         if (!playerName) {
             alert('يرجى إدخال اسمك');
             return;
         }
         
+        if (!this.socket) {
+            alert('غير متصل بالخادم');
+            return;
+        }
+        
+        console.log('Emitting createRoom event');
         this.socket.emit('createRoom', { playerName });
         this.hideRoomModal();
     }
@@ -325,6 +333,7 @@ class ShakbataGame {
     
     // Event Handlers
     handleRoomCreated(data) {
+        console.log('Room created:', data);
         this.roomId = data.roomId;
         this.currentPlayer = data.player;
         this.showGameArea();
