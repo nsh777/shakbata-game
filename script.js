@@ -214,6 +214,11 @@ class ShakbataGame {
             this.updateUI();
         });
         
+        // Ready button listener
+        document.getElementById('readyBtn').addEventListener('click', () => {
+            this.toggleReady();
+        });
+        
         // Modal controls
         document.getElementById('joinRoomBtn').addEventListener('click', () => {
             this.joinRoom();
@@ -416,6 +421,13 @@ class ShakbataGame {
         } else {
             gameSettings.style.display = 'none';
         }
+        
+        // Show ready section for all players
+        const readySection = document.getElementById('readySection');
+        readySection.style.display = 'block';
+        
+        // Initialize ready status
+        this.updateReadyStatus();
     }
     
     createRoom() {
@@ -507,6 +519,10 @@ class ShakbataGame {
         
         this.socket.on('playerAvatarUpdated', (data) => {
             this.handlePlayerAvatarUpdated(data);
+        });
+        
+        this.socket.on('playerReadyUpdated', (data) => {
+            this.handlePlayerReadyUpdated(data);
         });
     }
     
@@ -627,6 +643,40 @@ class ShakbataGame {
         this.updatePlayersList();
     }
     
+    handlePlayerReadyUpdated(data) {
+        this.players = data.room.players;
+        this.updatePlayersList();
+        this.updateReadyStatus();
+        this.addChatMessage('system', `${data.player.name} ${data.player.isReady ? 'جاهز' : 'غير جاهز'}`);
+    }
+    
+    toggleReady() {
+        if (this.socket) {
+            this.socket.emit('playerReady');
+        }
+    }
+    
+    updateReadyStatus() {
+        const readyStatus = document.getElementById('readyStatus');
+        const readyBtn = document.getElementById('readyBtn');
+        const currentPlayer = this.players.find(p => p.id === this.socket?.id);
+        
+        if (currentPlayer) {
+            if (currentPlayer.isReady) {
+                readyBtn.textContent = 'غير جاهز ❌';
+                readyBtn.classList.add('ready');
+            } else {
+                readyBtn.textContent = 'أنا جاهز! ✅';
+                readyBtn.classList.remove('ready');
+            }
+        }
+        
+        // Update ready status text
+        const readyCount = this.players.filter(p => p.isReady).length;
+        const totalPlayers = this.players.length;
+        readyStatus.textContent = `${readyCount}/${totalPlayers} لاعبين جاهزين`;
+    }
+    
     drawFromData(data) {
         // Draw on canvas from other players' drawing data
         this.ctx.strokeStyle = data.color;
@@ -660,10 +710,12 @@ class ShakbataGame {
                 expression: '😊'
             });
             
+            const readyIcon = player.isReady ? '✅' : '⏳';
             playerDiv.innerHTML = `
                 <div style="display: flex; align-items: center;">
                     ${avatar.outerHTML}
                     <span style="margin-right: 8px;">${player.name}</span>
+                    <span style="margin-right: 4px;">${readyIcon}</span>
                 </div>
                 <span class="player-score">${player.score}</span>
             `;
@@ -841,8 +893,10 @@ class ShakbataGame {
         // 1. Game is already playing
         // 2. User is not the host
         // 3. Not enough players (unless testing mode is enabled)
+        // 4. Not all players are ready (unless testing mode)
         const hasEnoughPlayers = this.players.length >= 2 || testingMode;
-        const shouldDisable = this.gameState === 'playing' || !isHost || !hasEnoughPlayers;
+        const allPlayersReady = testingMode || this.players.every(p => p.isReady);
+        const shouldDisable = this.gameState === 'playing' || !isHost || !hasEnoughPlayers || !allPlayersReady;
         
         // Debug: Log the button state
         console.log('Button state - Players:', this.players.length, 'TestingMode:', testingMode, 'HasEnoughPlayers:', hasEnoughPlayers, 'ShouldDisable:', shouldDisable);
@@ -856,6 +910,9 @@ class ShakbataGame {
             startGameBtn.textContent = 'فقط المضيف يمكنه البدء';
         } else if (!hasEnoughPlayers) {
             startGameBtn.textContent = 'انتظار المزيد من اللاعبين...';
+        } else if (!allPlayersReady) {
+            const readyCount = this.players.filter(p => p.isReady).length;
+            startGameBtn.textContent = `انتظار ${this.players.length - readyCount} لاعبين...`;
         } else if (testingMode) {
             startGameBtn.textContent = 'بدء اللعبة (وضع الاختبار)';
         } else {

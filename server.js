@@ -66,6 +66,7 @@ function createSafePlayer(player) {
         score: player.score,
         isDrawing: player.isDrawing,
         isHost: player.isHost || false,
+        isReady: player.isReady || false,
         avatar: {
             expression: player.avatar?.expression || '😊'
         }
@@ -82,6 +83,7 @@ function createSafeRoom(room) {
             score: p.score,
             isDrawing: p.isDrawing,
             isHost: p.isHost || false,
+            isReady: p.isReady || false,
             avatar: {
                 expression: p.avatar?.expression || '😊'
             }
@@ -123,6 +125,7 @@ io.on('connection', (socket) => {
             score: 0,
             isDrawing: false,
             isHost: true, // Mark the creator as host
+            isReady: false,
             avatar: {
                 expression: '😊'
             }
@@ -166,6 +169,7 @@ io.on('connection', (socket) => {
             score: 0,
             isDrawing: false,
             isHost: false, // Joining players are not hosts
+            isReady: false,
             avatar: {
                 expression: '😊'
             }
@@ -207,6 +211,16 @@ io.on('connection', (socket) => {
         if (room.players.length === 0) {
             socket.emit('error', { message: 'يجب أن يكون هناك لاعب واحد على الأقل' });
             return;
+        }
+        
+        // Check if all players are ready (unless testing mode)
+        const isTestingMode = gameSettings.testingMode || room.players.length === 1;
+        if (!isTestingMode) {
+            const allReady = room.players.every(p => p.isReady);
+            if (!allReady) {
+                socket.emit('error', { message: 'يجب أن يكون جميع اللاعبين جاهزين لبدء اللعبة' });
+                return;
+            }
         }
         
         // Set the first player as current player if not set
@@ -349,6 +363,26 @@ io.on('connection', (socket) => {
             player: createSafePlayer(playerData.player),
             room: createSafeRoom(room)
         });
+    });
+    
+    // Handle ready state
+    socket.on('playerReady', () => {
+        const playerData = players.get(socket.id);
+        if (!playerData) return;
+        
+        const room = rooms.get(playerData.roomId);
+        if (!room) return;
+        
+        // Toggle ready state
+        playerData.player.isReady = !playerData.player.isReady;
+        
+        // Notify all players in room
+        io.to(room.id).emit('playerReadyUpdated', {
+            player: createSafePlayer(playerData.player),
+            room: createSafeRoom(room)
+        });
+        
+        console.log(`${playerData.player.name} is ${playerData.player.isReady ? 'ready' : 'not ready'}`);
     });
     
     // Handle disconnection
