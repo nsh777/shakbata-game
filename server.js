@@ -66,7 +66,9 @@ function createSafePlayer(player) {
         score: player.score,
         isDrawing: player.isDrawing,
         isHost: player.isHost || false,
-        avatar: player.avatar || { expression: '😊' }
+        avatar: {
+            expression: player.avatar?.expression || '😊'
+        }
     };
 }
 
@@ -74,7 +76,16 @@ function createSafePlayer(player) {
 function createSafeRoom(room) {
     return {
         id: room.id,
-        players: room.players.map(createSafePlayer),
+        players: room.players.map(p => ({
+            id: p.id,
+            name: p.name,
+            score: p.score,
+            isDrawing: p.isDrawing,
+            isHost: p.isHost || false,
+            avatar: {
+                expression: p.avatar?.expression || '😊'
+            }
+        })),
         gameState: room.gameState,
         currentWord: room.currentWord,
         timer: room.timer
@@ -214,7 +225,16 @@ io.on('connection', (socket) => {
         
         io.to(room.id).emit('gameStarted', { 
             currentWord: room.currentWord,
-            currentPlayer: createSafePlayer(room.currentPlayer),
+            currentPlayer: {
+                id: room.currentPlayer.id,
+                name: room.currentPlayer.name,
+                score: room.currentPlayer.score,
+                isDrawing: room.currentPlayer.isDrawing,
+                isHost: room.currentPlayer.isHost,
+                avatar: {
+                    expression: room.currentPlayer.avatar?.expression || '😊'
+                }
+            },
             timer: room.timer
         });
         
@@ -362,7 +382,16 @@ function endTurn(room) {
     }, 1000);
     
     io.to(room.id).emit('turnChanged', {
-        currentPlayer: createSafePlayer(room.currentPlayer),
+        currentPlayer: {
+            id: room.currentPlayer.id,
+            name: room.currentPlayer.name,
+            score: room.currentPlayer.score,
+            isDrawing: room.currentPlayer.isDrawing,
+            isHost: room.currentPlayer.isHost,
+            avatar: {
+                expression: room.currentPlayer.avatar?.expression || '😊'
+            }
+        },
         currentWord: room.currentWord,
         timer: room.timer
     });
