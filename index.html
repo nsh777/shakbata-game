@@ -3,195 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شخبطة</title>
+    <title>شخبطة - لعبة الرسم والتخمين</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
+    <!-- Landing Page -->
+    <div id="landingPage" class="landing-page">
+        <div class="landing-content">
             <h1>🎨 شخبطة 🎨</h1>
             <p>لعبة الرسم والتخمين</p>
-        </header>
+            <div class="landing-buttons">
+                <button id="hostGameBtn" class="landing-btn">استضافة لعبة</button>
+                <button id="joinGameBtn" class="landing-btn">انضمام للعبة</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- Landing Page -->
-        <div id="landingPage" class="landing-page">
-            <div class="landing-content">
-                <h2>مرحباً بك في شخبطة!</h2>
-                <p>لعبة الرسم والتخمين مع الأصدقاء</p>
-                
-                <div class="landing-options">
-                    <button id="hostGameBtn" class="landing-btn host-btn">
-                        🎮 استضافة لعبة
-                        <small>إنشاء غرفة جديدة</small>
-                    </button>
-                    
-                    <button id="joinGameBtn" class="landing-btn join-btn">
-                        🚪 انضمام للعبة
-                        <small>الانضمام لغرفة موجودة</small>
-                    </button>
+    <!-- Game Area -->
+    <div id="gameArea" class="game-area" style="display: none;">
+        <!-- Left Panel - Players and Chat -->
+        <div class="left-panel">
+            <div class="players-section">
+                <h3>اللاعبون</h3>
+                <div class="players-list" id="playersList">
+                    <!-- Players will be added here -->
+                </div>
+            </div>
+            
+            <div class="chat-section">
+                <h3>المحادثة</h3>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." maxlength="100">
+                    <button id="sendMessage">إرسال</button>
                 </div>
             </div>
         </div>
 
-        <!-- Game Area -->
-        <div id="gameArea" class="game-container" style="display: none;">
-            <!-- Left Panel - Players and Chat -->
-            <div class="left-panel">
-                <div class="players-section">
-                    <h3>اللاعبون</h3>
-                    <div class="players-list" id="playersList">
-                        <!-- Players will be added here -->
-                    </div>
-                </div>
-                
-                <div class="chat-section">
-                    <h3>المحادثة</h3>
-                    <div class="chat-messages" id="chatMessages">
-                        <!-- Chat messages will appear here -->
-                    </div>
-                    <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." maxlength="100">
-                        <button id="sendMessage">إرسال</button>
-                    </div>
+        <!-- Center Panel - Game Area -->
+        <div class="center-panel">
+            <div class="game-info">
+                <div class="current-player" id="currentPlayer">انتظار اللاعبين...</div>
+                <div class="word-display" id="wordDisplay">كلمة السر</div>
+                <div class="timer" id="timer">60</div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Panel - Controls -->
+        <div class="right-panel">
+            <div class="game-settings" id="gameSettings">
+                <h3>إعدادات اللعبة</h3>
+                <div class="setting-item">
+                    <label for="gameTime">مدة الجولة:</label>
+                    <select id="gameTime">
+                        <option value="30">30 ثانية</option>
+                        <option value="60" selected>60 ثانية</option>
+                        <option value="90">90 ثانية</option>
+                        <option value="120">120 ثانية</option>
+                    </select>
                 </div>
             </div>
-
-            <!-- Center Panel - Game Area -->
-            <div class="center-panel">
-                <div class="game-info">
-                    <div class="current-player" id="currentPlayer">انتظار اللاعبين...</div>
-                    <div class="word-display" id="wordDisplay">كلمة السر</div>
-                    <div class="timer" id="timer">60</div>
-                </div>
-                
-                <div class="canvas-container">
-                    <canvas id="drawingCanvas" width="800" height="600"></canvas>
-                </div>
-                
-                <div class="guess-section">
-                    <input type="text" id="guessInput" placeholder="اكتب تخمينك هنا..." maxlength="50">
-                    <button id="submitGuess">تخمين</button>
-                </div>
+            
+            <div class="ready-section" id="readySection">
+                <h3>🎮 جاهز للعب؟</h3>
+                <button id="readyBtn" class="ready-btn">أنا جاهز! ✅</button>
+                <div class="ready-status" id="readyStatus">انتظار اللاعبين...</div>
             </div>
-
-            <!-- Right Panel - Drawing Tools -->
-            <div class="right-panel">
-                <div class="avatar-section">
-                    <h3>👤 شخصيتك</h3>
-                    <div class="avatar-customizer">
-                        <div class="avatar-preview-large" id="avatarPreview">
-                            <div class="avatar-emoji" id="avatarEmoji">😊</div>
-                        </div>
-                        
-                        <div class="avatar-options-simple">
-                            <div class="avatar-category-simple">
-                                <h4>🎭 التعبير</h4>
-                                <div class="emoji-grid">
-                                    <button class="emoji-btn active" data-type="expression" data-value="😊">😊</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😄">😄</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😉">😉</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😮">😮</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😠">😠</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😂">😂</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="🤔">🤔</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😎">😎</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="🥰">🥰</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😍">😍</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="😘">😘</button>
-                                    <button class="emoji-btn" data-type="expression" data-value="🤩">🤩</button>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
+            
+            <div class="game-controls">
+                <button id="createRoom" class="control-btn">إنشاء غرفة</button>
+                <button id="joinRoom" class="control-btn">انضمام لغرفة</button>
+                <button id="startGame" class="control-btn" disabled>بدء اللعبة</button>
+            </div>
+            
+            <div class="avatar-section">
+                <h3>👤 اختيار الصورة الشخصية</h3>
+                <div class="avatar-preview">
+                    <div class="avatar-preview-large" id="avatarPreview">😊</div>
                 </div>
-                
-                <div class="tools-section">
-                    <h3>أدوات الرسم</h3>
-                    
-                    <div class="tool-buttons">
-                        <button class="tool-btn active" id="brushTool" data-tool="brush">🖌️ فرشاة</button>
-                        <button class="tool-btn" id="eraserTool" data-tool="eraser">🧽 ممحاة</button>
-                        <button class="tool-btn" id="clearTool" data-tool="clear">🗑️ مسح الكل</button>
-                    </div>
-                    
-                    <div class="brush-size">
-                        <label>حجم الفرشاة:</label>
-                        <input type="range" id="brushSize" min="1" max="20" value="5">
-                        <span id="brushSizeValue">5</span>
-                    </div>
-                    
-                    <div class="color-palette">
-                        <label>الألوان:</label>
-                        <div class="colors">
-                            <button class="color-btn active" data-color="#000000" style="background-color: #000000;"></button>
-                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;"></button>
-                            <button class="color-btn" data-color="#00FF00" style="background-color: #00FF00;"></button>
-                            <button class="color-btn" data-color="#0000FF" style="background-color: #0000FF;"></button>
-                            <button class="color-btn" data-color="#FFFF00" style="background-color: #FFFF00;"></button>
-                            <button class="color-btn" data-color="#FF00FF" style="background-color: #FF00FF;"></button>
-                            <button class="color-btn" data-color="#00FFFF" style="background-color: #00FFFF;"></button>
-                            <button class="color-btn" data-color="#FFA500" style="background-color: #FFA500;"></button>
-                            <button class="color-btn" data-color="#800080" style="background-color: #800080;"></button>
-                            <button class="color-btn" data-color="#FFC0CB" style="background-color: #FFC0CB;"></button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="game-settings" id="gameSettings" style="display: none;">
-                    <h3>⚙️ إعدادات اللعبة</h3>
-                    <div class="setting-item">
-                        <label for="gameTime">⏱️ وقت كل جولة (ثانية):</label>
-                        <select id="gameTime">
-                            <option value="30">30 ثانية</option>
-                            <option value="60" selected>60 ثانية</option>
-                            <option value="90">90 ثانية</option>
-                            <option value="120">120 ثانية</option>
-                            <option value="180">180 ثانية</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="testingMode"> 
-                            🧪 وضع الاختبار (بدء بدون لاعبين)
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="ready-section" id="readySection" style="display: none;">
-                    <h3>🎮 جاهز للعب؟</h3>
-                    <button id="readyBtn" class="ready-btn">أنا جاهز! ✅</button>
-                    <div class="ready-status" id="readyStatus">انتظار اللاعبين...</div>
-                </div>
-                
-                <div class="game-controls">
-                    <button id="createRoom" class="control-btn">إنشاء غرفة</button>
-                    <button id="joinRoom" class="control-btn">انضمام لغرفة</button>
-                    <button id="startGame" class="control-btn" disabled>بدء اللعبة</button>
+                <div class="emoji-grid" id="emojiGrid">
+                    <!-- Emojis will be added by JavaScript -->
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Room Modal -->
-    <div id="roomModal" class="modal">
+    <div id="roomModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h3 id="modalTitle">انضمام للغرفة</h3>
-            <div id="roomCodeInput">
-                <input type="text" id="roomCode" placeholder="كود الغرفة" maxlength="6">
+            <h2 id="modalTitle">استضافة لعبة</h2>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="playerName">اسمك:</label>
+                    <input type="text" id="playerName" placeholder="أدخل اسمك" maxlength="20">
+                </div>
+                <div class="input-group" id="roomCodeInput">
+                    <label for="roomCode">كود الغرفة:</label>
+                    <input type="text" id="roomCode" placeholder="أدخل كود الغرفة" maxlength="6">
+                </div>
             </div>
-            <input type="text" id="playerName" placeholder="اسمك" maxlength="20">
-            <div class="modal-buttons">
-                <button id="joinRoomBtn">انضمام</button>
-                <button id="createRoomBtn">إنشاء غرفة جديدة</button>
-                <button id="closeModal">إغلاق</button>
+            <div class="modal-actions">
+                <button id="createRoom" class="modal-btn primary">إنشاء غرفة</button>
+                <button id="joinRoom" class="modal-btn secondary">انضمام</button>
             </div>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

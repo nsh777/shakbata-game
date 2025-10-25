@@ -1,61 +1,35 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const cors = require('cors');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? [process.env.FRONTEND_URL || "https://your-app.railway.app"] 
-            : "*",
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 
-// Middleware
-app.use(cors());
+// Serve static files
 app.use(express.static(path.join(__dirname)));
 
 // Game state
 const rooms = new Map();
 const players = new Map();
 
-// Arabic words database
-const arabicWords = [
-    // Animals
-    'قطة', 'كلب', 'أسد', 'فيل', 'حصان', 'بقرة', 'دجاجة', 'عصفور', 'سمكة', 'أرنب',
-    'جمل', 'نمر', 'ذئب', 'دب', 'قرد', 'زرافة', 'فراشة', 'نحلة', 'عنكبوت', 'ثعبان',
-    
-    // Food
-    'تفاح', 'موز', 'برتقال', 'عنب', 'فراولة', 'خبز', 'جبن', 'حليب', 'عسل', 'شاي',
-    'قهوة', 'ماء', 'عصير', 'بيتزا', 'برجر', 'شاورما', 'كبسة', 'منسف', 'فتة', 'حمص',
-    
-    // Objects
-    'كتاب', 'قلم', 'ورقة', 'مقص', 'مفتاح', 'ساعة', 'هاتف', 'كمبيوتر', 'تلفزيون', 'راديو',
-    'سيارة', 'طائرة', 'قطار', 'دراجة', 'منزل', 'باب', 'نافذة', 'كرسي', 'طاولة', 'سرير',
-    
-    // Nature
-    'شجرة', 'وردة', 'ورقة', 'جبل', 'بحر', 'نهر', 'صحراء', 'غابة', 'سماء', 'قمر',
-    'شمس', 'نجمة', 'سحابة', 'مطر', 'ثلج', 'رياح', 'رمل', 'صخر', 'عشب', 'زهرة',
-    
-    // Saudi Culture
-    'كعكة', 'تمر', 'قهوة عربية', 'شاي سعودي', 'عقال', 'شماغ', 'عباية', 'ثوب', 'خنجر', 'سيف',
-    'نخلة', 'رمال', 'كثبان', 'واحة', 'قلعة', 'مسجد', 'مئذنة', 'قبة', 'سوق', 'حارة',
-    
-    // Professions
-    'طبيب', 'معلم', 'مهندس', 'محاسب', 'محامي', 'شرطي', 'مطرب', 'فنان', 'كاتب', 'صحفي',
-    'طباخ', 'سائق', 'بائع', 'خياط', 'نجار', 'حداد', 'كهربائي', 'سباك', 'مزارع', 'راعي',
-    
-    // Sports
-    'كرة قدم', 'كرة سلة', 'كرة طائرة', 'تنس', 'سباحة', 'ركض', 'قفز', 'رمي', 'مصارعة', 'ملاكمة',
-    'فروسية', 'رماية', 'تسلق', 'غوص', 'تزلج', 'تزلج على الجليد', 'ركوب الدراجة', 'مشي', 'رقص', 'جمباز',
-    
-    // Colors
-    'أحمر', 'أزرق', 'أخضر', 'أصفر', 'برتقالي', 'بنفسجي', 'وردي', 'بني', 'أسود', 'أبيض',
-    'رمادي', 'ذهبي', 'فضي', 'أزرق فاتح', 'أخضر فاتح', 'أحمر فاتح', 'أصفر فاتح', 'برتقالي فاتح', 'بنفسجي فاتح', 'وردي فاتح'
+// Arabic words for the game
+const words = [
+    'قطة', 'كلب', 'أسد', 'فيل', 'حصان', 'بقرة', 'دجاجة', 'بط', 'سمكة', 'عصفور',
+    'شجرة', 'زهرة', 'وردة', 'تفاح', 'برتقال', 'موز', 'عنب', 'فراولة', 'ليمون', 'طماطم',
+    'منزل', 'سيارة', 'طائرة', 'قطار', 'دراجة', 'سفينة', 'حافلة', 'شاحنة', 'دراجة نارية', 'هليكوبتر',
+    'شمس', 'قمر', 'نجمة', 'سحابة', 'مطر', 'ثلج', 'رياح', 'برق', 'رعد', 'قوس قزح',
+    'كتاب', 'قلم', 'ورقة', 'ممحاة', 'مقص', 'صمغ', 'مسطرة', 'حقيبة', 'مكتب', 'كرسي',
+    'هاتف', 'كمبيوتر', 'تلفزيون', 'راديو', 'كاميرا', 'ساعة', 'نظارة', 'قبعة', 'حذاء', 'جورب',
+    'قميص', 'بنطلون', 'فستان', 'معطف', 'قفاز', 'حزام', 'ساعة يد', 'خاتم', 'سوار', 'قلادة',
+    'طعام', 'ماء', 'حليب', 'عصير', 'شاي', 'قهوة', 'خبز', 'جبن', 'لحم', 'دجاج',
+    'أحمر', 'أزرق', 'أخضر', 'أصفر', 'برتقالي', 'بنفسجي', 'وردي', 'بني', 'أسود', 'أبيض'
 ];
 
 // Helper function to create safe player object
@@ -67,9 +41,7 @@ function createSafePlayer(player) {
         isDrawing: player.isDrawing,
         isHost: player.isHost || false,
         isReady: player.isReady || false,
-        avatar: {
-            expression: player.avatar?.expression || '😊'
-        }
+        avatar: player.avatar || { expression: '😊' }
     };
 }
 
@@ -77,83 +49,140 @@ function createSafePlayer(player) {
 function createSafeRoom(room) {
     return {
         id: room.id,
-        players: room.players.map(p => ({
-            id: p.id,
-            name: p.name,
-            score: p.score,
-            isDrawing: p.isDrawing,
-            isHost: p.isHost || false,
-            isReady: p.isReady || false,
-            avatar: {
-                expression: p.avatar?.expression || '😊'
-            }
-        })),
+        players: room.players.map(p => createSafePlayer(p)),
         gameState: room.gameState,
         currentWord: room.currentWord,
-        timer: room.timer
+        currentPlayer: room.currentPlayer ? createSafePlayer(room.currentPlayer) : null,
+        timer: room.timer,
+        round: room.round || 1,
+        maxRounds: room.maxRounds || 3
     };
 }
 
-// Socket.io connection handling
-io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+// Generate random word
+function getRandomWord() {
+    return words[Math.floor(Math.random() * words.length)];
+}
+
+// Start game timer
+function startTimer(room) {
+    if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+    }
     
-    // Handle room creation
+    room.timerInterval = setInterval(() => {
+        room.timer--;
+        
+        // Send timer update to all players
+        io.to(room.id).emit('timerUpdate', { timer: room.timer });
+        
+        if (room.timer <= 0) {
+            endTurn(room);
+        }
+    }, 1000);
+}
+
+// End current turn
+function endTurn(room) {
+    if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+        room.timerInterval = null;
+    }
+    
+    // Find next player
+    const currentIndex = room.players.findIndex(p => p.id === room.currentPlayer.id);
+    const nextIndex = (currentIndex + 1) % room.players.length;
+    const nextPlayer = room.players[nextIndex];
+    
+    // Update current player
+    room.players.forEach(p => p.isDrawing = false);
+    nextPlayer.isDrawing = true;
+    room.currentPlayer = nextPlayer;
+    room.currentWord = getRandomWord();
+    room.timer = room.gameTime || 60;
+    
+    // Notify all players
+    io.to(room.id).emit('turnChanged', {
+        currentPlayer: createSafePlayer(room.currentPlayer),
+        timer: room.timer,
+        round: room.round
+    });
+    
+    // Send word only to current player
+    const currentPlayerSocket = Array.from(io.sockets.sockets.values())
+        .find(socket => socket.id === room.currentPlayer.id);
+    if (currentPlayerSocket) {
+        currentPlayerSocket.emit('wordUpdate', { word: room.currentWord });
+    }
+    
+    // Start timer for new turn
+    startTimer(room);
+}
+
+// Socket connection handling
+io.on('connection', (socket) => {
+    console.log('Player connected:', socket.id);
+    
+    // Create room
     socket.on('createRoom', (data) => {
         const { playerName } = data;
-        const roomId = generateRoomCode();
+        if (!playerName) {
+            socket.emit('error', { message: 'يرجى إدخال اسمك' });
+            return;
+        }
         
-        // Create new room
+        const roomId = Math.random().toString(36).substr(2, 6).toUpperCase();
         const room = {
             id: roomId,
             players: [],
             gameState: 'waiting',
+            currentWord: null,
             currentPlayer: null,
-            currentWord: '',
             timer: 60,
-            round: 0,
+            gameTime: 60,
+            round: 1,
             maxRounds: 3,
             timerInterval: null
         };
         
-        rooms.set(roomId, room);
-        
-        // Add player to room
         const player = {
             id: socket.id,
             name: playerName,
             score: 0,
             isDrawing: false,
-            isHost: true, // Mark the creator as host
+            isHost: true,
             isReady: false,
-            avatar: {
-                expression: '😊'
-            }
+            avatar: { expression: '😊' }
         };
         
         room.players.push(player);
         room.currentPlayer = player;
-        player.isDrawing = true;
-        
+        rooms.set(roomId, room);
         players.set(socket.id, { roomId, player });
         
         socket.join(roomId);
         socket.emit('roomCreated', { roomId, player: createSafePlayer(player) });
-        socket.emit('roomJoined', { 
-            room: createSafeRoom(room), 
-            player: createSafePlayer(player) 
-        });
+        io.to(roomId).emit('roomUpdated', { room: createSafeRoom(room) });
         
         console.log(`Room created: ${roomId} by ${playerName}`);
     });
     
-    // Handle joining room
+    // Join room
     socket.on('joinRoom', (data) => {
-        const { playerName, roomCode } = data;
-        const room = rooms.get(roomCode);
+        const { roomId, playerName } = data;
+        if (!roomId || !playerName) {
+            socket.emit('error', { message: 'يرجى إدخال كود الغرفة واسمك' });
+            return;
+        }
         
+        const room = rooms.get(roomId);
         if (!room) {
             socket.emit('error', { message: 'الغرفة غير موجودة' });
+            return;
+        }
+        
+        if (room.gameState === 'playing') {
+            socket.emit('error', { message: 'اللعبة جارية بالفعل' });
             return;
         }
         
@@ -162,144 +191,119 @@ io.on('connection', (socket) => {
             return;
         }
         
-        // Add player to room
         const player = {
             id: socket.id,
             name: playerName,
             score: 0,
             isDrawing: false,
-            isHost: false, // Joining players are not hosts
+            isHost: false,
             isReady: false,
-            avatar: {
-                expression: '😊'
-            }
+            avatar: { expression: '😊' }
         };
         
         room.players.push(player);
-        players.set(socket.id, { roomId: roomCode, player });
+        players.set(socket.id, { roomId, player });
+        socket.join(roomId);
         
-        socket.join(roomCode);
-        socket.emit('roomJoined', { 
-            room: createSafeRoom(room), 
-            player: createSafePlayer(player) 
-        });
+        socket.emit('roomJoined', { roomId, player: createSafePlayer(player) });
+        io.to(roomId).emit('roomUpdated', { room: createSafeRoom(room) });
         
-        // Notify all players in room
-        io.to(roomCode).emit('playerJoined', { 
-            player: createSafePlayer(player), 
-            room: createSafeRoom(room) 
-        });
-        
-        console.log(`${playerName} joined room ${roomCode}`);
+        console.log(`${playerName} joined room ${roomId}`);
     });
     
-    // Handle starting game
-    socket.on('startGame', (gameSettings = {}) => {
+    // Start game
+    socket.on('startGame', (data) => {
         const playerData = players.get(socket.id);
         if (!playerData) return;
         
         const room = rooms.get(playerData.roomId);
         if (!room) return;
         
-        // Only the host can start the game
+        // Check if player is host
         if (!playerData.player.isHost) {
             socket.emit('error', { message: 'فقط مضيف الغرفة يمكنه بدء اللعبة' });
             return;
         }
         
-        // Allow starting with 1 player for testing, but warn if no players
-        if (room.players.length === 0) {
-            socket.emit('error', { message: 'يجب أن يكون هناك لاعب واحد على الأقل' });
+        // Check if game is already playing
+        if (room.gameState === 'playing') {
+            socket.emit('error', { message: 'اللعبة جارية بالفعل' });
             return;
         }
         
-        // Check if all players are ready (unless testing mode)
-        const isTestingMode = gameSettings.testingMode || room.players.length === 1;
-        if (!isTestingMode) {
-            const allReady = room.players.every(p => p.isReady);
-            if (!allReady) {
-                socket.emit('error', { message: 'يجب أن يكون جميع اللاعبين جاهزين لبدء اللعبة' });
-                return;
-            }
+        // Check if enough players
+        if (room.players.length < 2) {
+            socket.emit('error', { message: 'يجب أن يكون هناك لاعبين على الأقل' });
+            return;
         }
         
-        // Set the first player as current player if not set
-        if (!room.currentPlayer && room.players.length > 0) {
-            room.currentPlayer = room.players[0];
-            room.currentPlayer.isDrawing = true;
+        // Check if all players are ready
+        const allReady = room.players.every(p => p.isReady);
+        if (!allReady) {
+            socket.emit('error', { message: 'يجب أن يكون جميع اللاعبين جاهزين' });
+            return;
         }
         
+        // Start the game
         room.gameState = 'playing';
+        room.currentPlayer = room.players[0];
+        room.currentPlayer.isDrawing = true;
         room.currentWord = getRandomWord();
+        room.timer = room.gameTime || 60;
+        room.round = 1;
         
-        // Set game time (default 60 seconds, or from settings)
-        room.gameTime = gameSettings.gameTime || 60;
-        room.timeRemaining = room.gameTime;
-        room.timer = room.gameTime;
-        
-        // Start timer
-        room.timerInterval = setInterval(() => {
-            room.timer--;
-            room.timeRemaining = room.timer;
-            io.to(room.id).emit('timerUpdate', { timer: room.timer });
-            
-            if (room.timer <= 0) {
-                endTurn(room);
-            }
-        }, 1000);
-        
-        // Send game started event to all players
-        io.to(room.id).emit('gameStarted', { 
-            currentPlayer: {
-                id: room.currentPlayer.id,
-                name: room.currentPlayer.name,
-                score: room.currentPlayer.score,
-                isDrawing: room.currentPlayer.isDrawing,
-                isHost: room.currentPlayer.isHost,
-                avatar: {
-                    expression: room.currentPlayer.avatar?.expression || '😊'
-                }
-            },
-            timer: room.timer
+        // Notify all players
+        io.to(room.id).emit('gameStarted', {
+            currentPlayer: createSafePlayer(room.currentPlayer),
+            timer: room.timer,
+            round: room.round
         });
         
-        // Send the word ONLY to the current player (the one drawing)
-        const currentPlayerSocket = Array.from(players.values())
-            .find(p => p.player.id === room.currentPlayer.id)?.socket;
-        if (currentPlayerSocket) {
-            currentPlayerSocket.emit('gameStarted', { 
-                currentWord: room.currentWord,
-                currentPlayer: {
-                    id: room.currentPlayer.id,
-                    name: room.currentPlayer.name,
-                    score: room.currentPlayer.score,
-                    isDrawing: room.currentPlayer.isDrawing,
-                    isHost: room.currentPlayer.isHost,
-                    avatar: {
-                        expression: room.currentPlayer.avatar?.expression || '😊'
-                    }
-                },
-                timer: room.timer
-            });
-        }
+        // Send word only to current player
+        socket.emit('wordUpdate', { word: room.currentWord });
         
-        console.log(`Game started in room ${room.id} with ${room.players.length} players`);
-        console.log(`Current player: ${room.currentPlayer ? room.currentPlayer.name : 'None'}`);
+        // Start timer
+        startTimer(room);
+        
+        console.log(`Game started in room ${room.id}`);
     });
     
-    // Handle drawing data
-    socket.on('drawing', (data) => {
+    // Handle ready state
+    socket.on('playerReady', () => {
         const playerData = players.get(socket.id);
         if (!playerData) return;
         
         const room = rooms.get(playerData.roomId);
-        if (!room || !playerData.player.isDrawing) return;
+        if (!room) return;
         
-        // Broadcast drawing data to other players
-        socket.to(room.id).emit('drawing', data);
+        // Toggle ready state
+        playerData.player.isReady = !playerData.player.isReady;
+        
+        // Notify all players
+        io.to(room.id).emit('playerReadyUpdated', {
+            player: createSafePlayer(playerData.player),
+            room: createSafeRoom(room)
+        });
+        
+        console.log(`${playerData.player.name} is ${playerData.player.isReady ? 'ready' : 'not ready'}`);
     });
     
-    // Handle guess submission
+    // Handle drawing
+    socket.on('draw', (data) => {
+        const playerData = players.get(socket.id);
+        if (!playerData) return;
+        
+        const room = rooms.get(playerData.roomId);
+        if (!room) return;
+        
+        // Only current player can draw
+        if (playerData.player.id !== room.currentPlayer.id) return;
+        
+        // Broadcast drawing to other players
+        socket.to(room.id).emit('draw', data);
+    });
+    
+    // Handle guess
     socket.on('guess', (data) => {
         const playerData = players.get(socket.id);
         if (!playerData) return;
@@ -307,33 +311,35 @@ io.on('connection', (socket) => {
         const room = rooms.get(playerData.roomId);
         if (!room) return;
         
-        // In testing mode with 1 player, allow the drawer to guess
-        const isTestingMode = room.players.length === 1;
-        if (!isTestingMode && playerData.player.isDrawing) return;
+        // Don't allow current player to guess
+        if (playerData.player.id === room.currentPlayer.id) return;
         
-        const { guess } = data;
+        const guess = data.guess.toLowerCase().trim();
+        const correctWord = room.currentWord.toLowerCase();
         
-        if (guess.toLowerCase() === room.currentWord.toLowerCase()) {
-            // Correct guess
+        if (guess === correctWord) {
+            // Correct guess!
             playerData.player.score += 10;
-            room.currentPlayer.score += 5; // Bonus for the drawer
+            room.currentPlayer.score += 5;
             
+            // Notify all players
             io.to(room.id).emit('correctGuess', {
                 player: createSafePlayer(playerData.player),
                 word: room.currentWord
             });
             
+            // End turn
             endTurn(room);
         } else {
             // Wrong guess
             io.to(room.id).emit('wrongGuess', {
                 player: createSafePlayer(playerData.player),
-                guess: guess
+                guess: data.guess
             });
         }
     });
     
-    // Handle chat messages
+    // Handle chat
     socket.on('chatMessage', (data) => {
         const playerData = players.get(socket.id);
         if (!playerData) return;
@@ -355,34 +361,12 @@ io.on('connection', (socket) => {
         const room = rooms.get(playerData.roomId);
         if (!room) return;
         
-        // Update player avatar
         playerData.player.avatar = data.avatar;
         
-        // Notify all players in room
         io.to(room.id).emit('playerAvatarUpdated', {
             player: createSafePlayer(playerData.player),
             room: createSafeRoom(room)
         });
-    });
-    
-    // Handle ready state
-    socket.on('playerReady', () => {
-        const playerData = players.get(socket.id);
-        if (!playerData) return;
-        
-        const room = rooms.get(playerData.roomId);
-        if (!room) return;
-        
-        // Toggle ready state
-        playerData.player.isReady = !playerData.player.isReady;
-        
-        // Notify all players in room
-        io.to(room.id).emit('playerReadyUpdated', {
-            player: createSafePlayer(playerData.player),
-            room: createSafeRoom(room)
-        });
-        
-        console.log(`${playerData.player.name} is ${playerData.player.isReady ? 'ready' : 'not ready'}`);
     });
     
     // Handle disconnection
@@ -395,109 +379,37 @@ io.on('connection', (socket) => {
         
         // Remove player from room
         room.players = room.players.filter(p => p.id !== socket.id);
-        players.delete(socket.id);
         
+        // If no players left, delete room
         if (room.players.length === 0) {
-            // Delete empty room
-            if (room.timerInterval) {
-                clearInterval(room.timerInterval);
-            }
             rooms.delete(playerData.roomId);
+            console.log(`Room ${playerData.roomId} deleted (no players)`);
         } else {
-            // Notify remaining players
-            io.to(playerData.roomId).emit('playerLeft', {
-                player: createSafePlayer(playerData.player),
-                room: createSafeRoom(room)
-            });
-        }
-        
-        console.log(`Player ${playerData.player.name} disconnected from room ${playerData.roomId}`);
-    });
-});
-
-// Helper functions
-function generateRoomCode() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
-function getRandomWord() {
-    return arabicWords[Math.floor(Math.random() * arabicWords.length)];
-}
-
-function endTurn(room) {
-    if (room.timerInterval) {
-        clearInterval(room.timerInterval);
-    }
-    
-    // Move to next player
-    const currentIndex = room.players.findIndex(p => p.id === room.currentPlayer.id);
-    const nextIndex = (currentIndex + 1) % room.players.length;
-    
-    room.currentPlayer.isDrawing = false;
-    room.currentPlayer = room.players[nextIndex];
-    room.currentPlayer.isDrawing = true;
-    
-    room.currentWord = getRandomWord();
-    room.timer = room.gameTime || 60;
-    
-    // Start new timer
-    room.timerInterval = setInterval(() => {
-        room.timer--;
-        io.to(room.id).emit('timerUpdate', { timer: room.timer });
-        
-        if (room.timer <= 0) {
-            endTurn(room);
-        }
-    }, 1000);
-    
-    // Send turn changed event to all players
-    io.to(room.id).emit('turnChanged', {
-        currentPlayer: {
-            id: room.currentPlayer.id,
-            name: room.currentPlayer.name,
-            score: room.currentPlayer.score,
-            isDrawing: room.currentPlayer.isDrawing,
-            isHost: room.currentPlayer.isHost,
-            avatar: {
-                expression: room.currentPlayer.avatar?.expression || '😊'
+            // If host left, make first player host
+            if (playerData.player.isHost) {
+                room.players[0].isHost = true;
             }
-        },
-        timer: room.timer
-    });
-    
-    // Send the word ONLY to the current player (the one drawing)
-    const currentPlayerData = Array.from(players.values())
-        .find(p => p.player.id === room.currentPlayer.id);
-    if (currentPlayerData) {
-        currentPlayerData.socket.emit('turnChanged', {
-            currentPlayer: {
-                id: room.currentPlayer.id,
-                name: room.currentPlayer.name,
-                score: room.currentPlayer.score,
-                isDrawing: room.currentPlayer.isDrawing,
-                isHost: room.currentPlayer.isHost,
-                avatar: {
-                    expression: room.currentPlayer.avatar?.expression || '😊'
+            
+            // If current player left, move to next
+            if (room.currentPlayer && room.currentPlayer.id === socket.id) {
+                if (room.players.length > 0) {
+                    room.currentPlayer = room.players[0];
+                    room.currentPlayer.isDrawing = true;
                 }
-            },
-            currentWord: room.currentWord,
-            timer: room.timer
-        });
-    }
-}
-
-// Routes
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+            }
+            
+            // Notify remaining players
+            io.to(playerData.roomId).emit('roomUpdated', { room: createSafeRoom(room) });
+        }
+        
+        players.delete(socket.id);
+        console.log(`Player ${playerData.player.name} disconnected`);
+    });
 });
 
 // Start server
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
-
-server.listen(PORT, HOST, () => {
-    console.log(`🚀 شخبطة server running on ${HOST}:${PORT}`);
-    if (process.env.NODE_ENV !== 'production') {
-        console.log(`🎨 Visit http://localhost:${PORT} to play!`);
-    }
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 شخبطة server running on 0.0.0.0:${PORT}`);
+    console.log(`🎨 Visit http://localhost:${PORT} to play!`);
 });
