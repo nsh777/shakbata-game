@@ -234,7 +234,7 @@ io.on('connection', (socket) => {
             }
         }, 1000);
         
-        // Send game started event to all players (without the word)
+        // Send game started event to all players
         io.to(room.id).emit('gameStarted', { 
             currentPlayer: {
                 id: room.currentPlayer.id,
@@ -250,10 +250,10 @@ io.on('connection', (socket) => {
         });
         
         // Send the word ONLY to the current player (the one drawing)
-        const currentPlayerData = Array.from(players.values())
-            .find(p => p.player.id === room.currentPlayer.id);
-        if (currentPlayerData) {
-            currentPlayerData.socket.emit('gameStarted', { 
+        const currentPlayerSocket = Array.from(players.values())
+            .find(p => p.player.id === room.currentPlayer.id)?.socket;
+        if (currentPlayerSocket) {
+            currentPlayerSocket.emit('gameStarted', { 
                 currentWord: room.currentWord,
                 currentPlayer: {
                     id: room.currentPlayer.id,
@@ -416,7 +416,7 @@ function endTurn(room) {
         }
     }, 1000);
     
-    // Send turn changed event to all players (without the word)
+    // Send turn changed event to all players
     io.to(room.id).emit('turnChanged', {
         currentPlayer: {
             id: room.currentPlayer.id,

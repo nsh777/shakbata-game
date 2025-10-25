@@ -844,6 +844,9 @@ class ShakbataGame {
         const hasEnoughPlayers = this.players.length >= 2 || testingMode;
         const shouldDisable = this.gameState === 'playing' || !isHost || !hasEnoughPlayers;
         
+        // Debug: Log the button state
+        console.log('Button state - Players:', this.players.length, 'TestingMode:', testingMode, 'HasEnoughPlayers:', hasEnoughPlayers, 'ShouldDisable:', shouldDisable);
+        
         startGameBtn.disabled = shouldDisable;
         
         // Update button text based on state
