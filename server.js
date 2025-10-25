@@ -190,16 +190,22 @@ io.on('connection', (socket) => {
     });
     
     // Handle starting game
-    socket.on('startGame', () => {
+    socket.on('startGame', (gameSettings = {}) => {
         const playerData = players.get(socket.id);
         if (!playerData) return;
         
         const room = rooms.get(playerData.roomId);
-        if (!room || room.players.length < 2) return;
+        if (!room) return;
         
         // Only the host can start the game
         if (!playerData.player.isHost) {
             socket.emit('error', { message: 'فقط مضيف الغرفة يمكنه بدء اللعبة' });
+            return;
+        }
+        
+        // Allow starting with 1 player for testing, but warn if no players
+        if (room.players.length === 0) {
+            socket.emit('error', { message: 'يجب أن يكون هناك لاعب واحد على الأقل' });
             return;
         }
         
@@ -211,11 +217,16 @@ io.on('connection', (socket) => {
         
         room.gameState = 'playing';
         room.currentWord = getRandomWord();
-        room.timer = 60;
+        
+        // Set game time (default 60 seconds, or from settings)
+        room.gameTime = gameSettings.gameTime || 60;
+        room.timeRemaining = room.gameTime;
+        room.timer = room.gameTime;
         
         // Start timer
         room.timerInterval = setInterval(() => {
             room.timer--;
+            room.timeRemaining = room.timer;
             io.to(room.id).emit('timerUpdate', { timer: room.timer });
             
             if (room.timer <= 0) {

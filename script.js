@@ -209,6 +209,11 @@ class ShakbataGame {
             this.startGame();
         });
         
+        // Testing mode checkbox listener
+        document.getElementById('testingMode').addEventListener('change', () => {
+            this.updateUI();
+        });
+        
         // Modal controls
         document.getElementById('joinRoomBtn').addEventListener('click', () => {
             this.joinRoom();
@@ -403,6 +408,14 @@ class ShakbataGame {
     showGameArea() {
         document.getElementById('landingPage').style.display = 'none';
         document.getElementById('gameArea').style.display = 'grid';
+        
+        // Show game settings for host
+        const gameSettings = document.getElementById('gameSettings');
+        if (this.currentPlayer?.isHost) {
+            gameSettings.style.display = 'block';
+        } else {
+            gameSettings.style.display = 'none';
+        }
     }
     
     createRoom() {
@@ -675,7 +688,10 @@ class ShakbataGame {
         console.log('Start game clicked. Players:', this.players.length);
         console.log('Game state:', this.gameState);
         
-        if (this.players.length < 2) {
+        // Check if testing mode is enabled
+        const testingMode = document.getElementById('testingMode').checked;
+        
+        if (!testingMode && this.players.length < 2) {
             alert('يجب أن يكون هناك لاعبين على الأقل لبدء اللعبة');
             return;
         }
@@ -686,8 +702,15 @@ class ShakbataGame {
         }
         
         if (this.socket) {
-            console.log('Sending startGame event to server');
-            this.socket.emit('startGame');
+            // Get game settings
+            const gameTime = parseInt(document.getElementById('gameTime').value);
+            const gameSettings = {
+                gameTime: gameTime,
+                testingMode: testingMode
+            };
+            
+            console.log('Sending startGame event to server with settings:', gameSettings);
+            this.socket.emit('startGame', gameSettings);
         } else {
             alert('غير متصل بالخادم');
         }
@@ -800,7 +823,8 @@ class ShakbataGame {
         // Update start game button
         const startGameBtn = document.getElementById('startGame');
         const isHost = this.currentPlayer?.isHost || false;
-        const shouldDisable = this.players.length < 2 || this.gameState === 'playing' || !isHost;
+        const testingMode = document.getElementById('testingMode').checked;
+        const shouldDisable = (!testingMode && this.players.length < 2) || this.gameState === 'playing' || !isHost;
         
         startGameBtn.disabled = shouldDisable;
         
@@ -809,6 +833,8 @@ class ShakbataGame {
             startGameBtn.textContent = 'اللعبة جارية...';
         } else if (!isHost) {
             startGameBtn.textContent = 'فقط المضيف يمكنه البدء';
+        } else if (testingMode) {
+            startGameBtn.textContent = 'بدء اللعبة (وضع الاختبار)';
         } else {
             startGameBtn.textContent = 'بدء اللعبة';
         }

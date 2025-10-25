@@ -140,6 +140,26 @@
                     </div>
                 </div>
                 
+                <div class="game-settings" id="gameSettings" style="display: none;">
+                    <h3>⚙️ إعدادات اللعبة</h3>
+                    <div class="setting-item">
+                        <label for="gameTime">⏱️ وقت كل جولة (ثانية):</label>
+                        <select id="gameTime">
+                            <option value="30">30 ثانية</option>
+                            <option value="60" selected>60 ثانية</option>
+                            <option value="90">90 ثانية</option>
+                            <option value="120">120 ثانية</option>
+                            <option value="180">180 ثانية</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="testingMode"> 
+                            🧪 وضع الاختبار (بدء بدون لاعبين)
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="game-controls">
                     <button id="createRoom" class="control-btn">إنشاء غرفة</button>
                     <button id="joinRoom" class="control-btn">انضمام لغرفة</button>
