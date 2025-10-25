@@ -484,11 +484,18 @@ class ShakbataGame {
     }
     
     handleGameStarted(data) {
+        console.log('Game started! Data:', data);
         this.gameState = 'playing';
         this.currentWord = data.currentWord;
         this.timer = data.timer;
         this.updateUI();
         this.addChatMessage('system', 'بدأت اللعبة!');
+        
+        // Update timer display
+        const timerElement = document.getElementById('timer');
+        if (timerElement) {
+            timerElement.textContent = this.timer;
+        }
     }
     
     handleTurnChanged(data) {
@@ -620,13 +627,24 @@ class ShakbataGame {
     }
     
     startGame() {
+        console.log('Start game clicked. Players:', this.players.length);
+        console.log('Game state:', this.gameState);
+        
         if (this.players.length < 2) {
             alert('يجب أن يكون هناك لاعبين على الأقل لبدء اللعبة');
             return;
         }
         
+        if (this.gameState === 'playing') {
+            alert('اللعبة جارية بالفعل');
+            return;
+        }
+        
         if (this.socket) {
+            console.log('Sending startGame event to server');
             this.socket.emit('startGame');
+        } else {
+            alert('غير متصل بالخادم');
         }
     }
     

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug شخبطة Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .debug-section { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .log { background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: scroll; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .info { color: #0066ff; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug شخبطة Game</h1>
+    
+    <div class="debug-section">
+        <h3>Connection Test</h3>
+        <button onclick="testConnection()">Test Socket Connection</button>
+        <div id="connectionStatus">Not tested</div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Room Test</h3>
+        <input type="text" id="playerName" placeholder="Your name" value="DebugPlayer">
+        <button onclick="createRoom()">Create Room</button>
+        <button onclick="joinRoom()">Join Room</button>
+        <input type="text" id="roomCode" placeholder="Room code">
+        <div id="roomStatus">No room</div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Game Test</h3>
+        <button onclick="startGame()">Start Game</button>
+        <div id="gameStatus">Not started</div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Debug Log</h3>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let currentRoom = null;
+        let players = [];
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function testConnection() {
+            try {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    log('✅ Connected to server', 'success');
+                    document.getElementById('connectionStatus').innerHTML = '✅ Connected';
+                });
+                
+                socket.on('disconnect', () => {
+                    log('❌ Disconnected from server', 'error');
+                    document.getElementById('connectionStatus').innerHTML = '❌ Disconnected';
+                });
+                
+                socket.on('connect_error', (error) => {
+                    log('❌ Connection error: ' + error.message, 'error');
+                    document.getElementById('connectionStatus').innerHTML = '❌ Connection Error';
+                });
+                
+                // Room events
+                socket.on('roomCreated', (data) => {
+                    log('✅ Room created: ' + JSON.stringify(data), 'success');
+                    currentRoom = data.roomId;
+                    document.getElementById('roomStatus').innerHTML = `✅ Room: ${data.roomId}`;
+                });
+                
+                socket.on('roomJoined', (data) => {
+                    log('✅ Room joined: ' + JSON.stringify(data), 'success');
+                    currentRoom = data.room.id;
+                    players = data.room.players;
+                    document.getElementById('roomStatus').innerHTML = `✅ Joined: ${data.room.id} (${players.length} players)`;
+                });
+                
+                socket.on('playerJoined', (data) => {
+                    log('👤 Player joined: ' + data.player.name, 'info');
+                    players = data.room.players;
+                    document.getElementById('roomStatus').innerHTML = `✅ Room: ${data.room.id} (${players.length} players)`;
+                });
+                
+                socket.on('gameStarted', (data) => {
+                    log('🎮 Game started! Data: ' + JSON.stringify(data), 'success');
+                    document.getElementById('gameStatus').innerHTML = '✅ Game Started!';
+                });
+                
+                socket.on('error', (data) => {
+                    log('❌ Server error: ' + data.message, 'error');
+                });
+                
+            } catch (error) {
+                log('❌ Error creating socket: ' + error.message, 'error');
+            }
+        }
+        
+        function createRoom() {
+            if (!socket) {
+                log('❌ Socket not connected. Click "Test Socket Connection" first.', 'error');
+                return;
+            }
+            
+            const playerName = document.getElementById('playerName').value;
+            if (!playerName) {
+                log('❌ Please enter a player name', 'error');
+                return;
+            }
+            
+            log('🔄 Creating room for: ' + playerName, 'info');
+            socket.emit('createRoom', { playerName });
+        }
+        
+        function joinRoom() {
+            if (!socket) {
+                log('❌ Socket not connected. Click "Test Socket Connection" first.', 'error');
+                return;
+            }
+            
+            const roomCode = document.getElementById('roomCode').value;
+            const playerName = document.getElementById('playerName').value;
+            
+            if (!roomCode || !playerName) {
+                log('❌ Please enter both room code and player name', 'error');
+                return;
+            }
+            
+            log('🔄 Joining room: ' + roomCode + ' as: ' + playerName, 'info');
+            socket.emit('joinRoom', { playerName, roomCode });
+        }
+        
+        function startGame() {
+            if (!socket) {
+                log('❌ Socket not connected', 'error');
+                return;
+            }
+            
+            if (players.length < 2) {
+                log('❌ Need at least 2 players. Current: ' + players.length, 'error');
+                return;
+            }
+            
+            log('🔄 Starting game with ' + players.length + ' players', 'info');
+            socket.emit('startGame');
+        }
+        
+        // Auto-test connection on page load
+        window.onload = function() {
+            log('🚀 Debug page loaded. Click "Test Socket Connection" to begin.', 'info');
+        };
+    </script>
+</body>
+</html>

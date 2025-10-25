@@ -151,6 +151,12 @@ io.on('connection', (socket) => {
         const room = rooms.get(playerData.roomId);
         if (!room || room.players.length < 2) return;
         
+        // Set the first player as current player if not set
+        if (!room.currentPlayer && room.players.length > 0) {
+            room.currentPlayer = room.players[0];
+            room.currentPlayer.isDrawing = true;
+        }
+        
         room.gameState = 'playing';
         room.currentWord = getRandomWord();
         room.timer = 60;
@@ -171,7 +177,8 @@ io.on('connection', (socket) => {
             timer: room.timer
         });
         
-        console.log(`Game started in room ${room.id}`);
+        console.log(`Game started in room ${room.id} with ${room.players.length} players`);
+        console.log(`Current player: ${room.currentPlayer ? room.currentPlayer.name : 'None'}`);
     });
     
     // Handle drawing data
