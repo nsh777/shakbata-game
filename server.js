@@ -65,6 +65,7 @@ function createSafePlayer(player) {
         name: player.name,
         score: player.score,
         isDrawing: player.isDrawing,
+        isHost: player.isHost || false,
         avatar: player.avatar || { expression: '😊' }
     };
 }
@@ -110,6 +111,7 @@ io.on('connection', (socket) => {
             name: playerName,
             score: 0,
             isDrawing: false,
+            isHost: true, // Mark the creator as host
             avatar: {
                 expression: '😊'
             }
@@ -152,6 +154,7 @@ io.on('connection', (socket) => {
             name: playerName,
             score: 0,
             isDrawing: false,
+            isHost: false, // Joining players are not hosts
             avatar: {
                 expression: '😊'
             }
@@ -182,6 +185,12 @@ io.on('connection', (socket) => {
         
         const room = rooms.get(playerData.roomId);
         if (!room || room.players.length < 2) return;
+        
+        // Only the host can start the game
+        if (!playerData.player.isHost) {
+            socket.emit('error', { message: 'فقط مضيف الغرفة يمكنه بدء اللعبة' });
+            return;
+        }
         
         // Set the first player as current player if not set
         if (!room.currentPlayer && room.players.length > 0) {
