@@ -799,8 +799,7 @@ class ShakbataGame {
         
         // Update start game button
         const startGameBtn = document.getElementById('startGame');
-        const currentPlayer = this.players.find(p => p.id === this.socket?.id);
-        const isHost = currentPlayer?.isHost || false;
+        const isHost = this.currentPlayer?.isHost || false;
         const shouldDisable = this.players.length < 2 || this.gameState === 'playing' || !isHost;
         
         startGameBtn.disabled = shouldDisable;
@@ -815,7 +814,7 @@ class ShakbataGame {
         }
         
         // Debug logging
-        console.log('UpdateUI - Players:', this.players.length, 'GameState:', this.gameState, 'IsHost:', isHost, 'Button disabled:', shouldDisable);
+        console.log('UpdateUI - Players:', this.players.length, 'GameState:', this.gameState, 'CurrentPlayer:', this.currentPlayer?.name, 'IsHost:', isHost, 'Button disabled:', shouldDisable);
         
         // Update word display
         this.updateWordDisplay();
