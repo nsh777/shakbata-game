@@ -234,8 +234,8 @@ io.on('connection', (socket) => {
             }
         }, 1000);
         
+        // Send game started event to all players (without the word)
         io.to(room.id).emit('gameStarted', { 
-            currentWord: room.currentWord,
             currentPlayer: {
                 id: room.currentPlayer.id,
                 name: room.currentPlayer.name,
@@ -248,6 +248,26 @@ io.on('connection', (socket) => {
             },
             timer: room.timer
         });
+        
+        // Send the word ONLY to the current player (the one drawing)
+        const currentPlayerData = Array.from(players.values())
+            .find(p => p.player.id === room.currentPlayer.id);
+        if (currentPlayerData) {
+            currentPlayerData.socket.emit('gameStarted', { 
+                currentWord: room.currentWord,
+                currentPlayer: {
+                    id: room.currentPlayer.id,
+                    name: room.currentPlayer.name,
+                    score: room.currentPlayer.score,
+                    isDrawing: room.currentPlayer.isDrawing,
+                    isHost: room.currentPlayer.isHost,
+                    avatar: {
+                        expression: room.currentPlayer.avatar?.expression || '😊'
+                    }
+                },
+                timer: room.timer
+            });
+        }
         
         console.log(`Game started in room ${room.id} with ${room.players.length} players`);
         console.log(`Current player: ${room.currentPlayer ? room.currentPlayer.name : 'None'}`);
@@ -396,6 +416,7 @@ function endTurn(room) {
         }
     }, 1000);
     
+    // Send turn changed event to all players (without the word)
     io.to(room.id).emit('turnChanged', {
         currentPlayer: {
             id: room.currentPlayer.id,
@@ -407,9 +428,28 @@ function endTurn(room) {
                 expression: room.currentPlayer.avatar?.expression || '😊'
             }
         },
-        currentWord: room.currentWord,
         timer: room.timer
     });
+    
+    // Send the word ONLY to the current player (the one drawing)
+    const currentPlayerData = Array.from(players.values())
+        .find(p => p.player.id === room.currentPlayer.id);
+    if (currentPlayerData) {
+        currentPlayerData.socket.emit('turnChanged', {
+            currentPlayer: {
+                id: room.currentPlayer.id,
+                name: room.currentPlayer.name,
+                score: room.currentPlayer.score,
+                isDrawing: room.currentPlayer.isDrawing,
+                isHost: room.currentPlayer.isHost,
+                avatar: {
+                    expression: room.currentPlayer.avatar?.expression || '😊'
+                }
+            },
+            currentWord: room.currentWord,
+            timer: room.timer
+        });
+    }
 }
 
 // Routes
