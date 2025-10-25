@@ -546,6 +546,12 @@ class ShakbataGame {
         this.gameState = 'playing';
         this.currentWord = data.currentWord;
         this.timer = data.timer;
+        
+        // Update current player with server data
+        if (data.currentPlayer) {
+            this.currentPlayer = { ...this.currentPlayer, ...data.currentPlayer };
+        }
+        
         this.updateUI();
         this.addChatMessage('system', 'بدأت اللعبة!');
         
@@ -559,6 +565,12 @@ class ShakbataGame {
     handleTurnChanged(data) {
         this.currentWord = data.currentWord;
         this.timer = data.timer;
+        
+        // Update current player with server data
+        if (data.currentPlayer) {
+            this.currentPlayer = { ...this.currentPlayer, ...data.currentPlayer };
+        }
+        
         this.updateUI();
         this.addChatMessage('system', `دور ${data.currentPlayer.name}`);
     }
@@ -732,7 +744,7 @@ class ShakbataGame {
     }
     
     isCurrentPlayer() {
-        return this.currentPlayer && this.currentPlayer.isCurrent;
+        return this.currentPlayer && this.currentPlayer.isDrawing;
     }
     
     startTimer() {
